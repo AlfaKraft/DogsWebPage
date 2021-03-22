@@ -3,10 +3,10 @@ from flask_cors import CORS
 import traceback 
 import os
 import time
-
+import MySQLdb
 # Assistant
 from watson_developer_cloud import AssistantV2
-from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+
 from functions.credentials import getService
 from functions.auth_user import auth, getUser
 from flask import session
@@ -99,12 +99,9 @@ app.config.update(SECRET_KEY='aoun@ibm')
 ## Watson Assistant ##
 api, url = getService('assistant')
 
-authenticator = IAMAuthenticator(api)
-assistant = AssistantV2(
-    version='2020-09-24',
-    authenticator=authenticator
-)
-assistant.set_service_url(url)
+
+
+
 ASSISTANT_ID = "12345"
 
 ## Chat page ##
@@ -112,55 +109,14 @@ ASSISTANT_ID = "12345"
 def chat():
 
     ## Watson session context
-    response = assistant.create_session(
-        assistant_id=ASSISTANT_ID
-        ).get_result()
-    session['session_id'] = response['session_id']
     ## End Watson session context
 
-    return render_template('chat.html')
+    return
 
 ## Chat GET Request handler ##
 @app.route('/local-api/message', methods=['POST'])
 def message():
-
-    msg = request.form.get('msg')
-
-    if 'session_id' not in session:
-        response = assistant.create_session(
-            assistant_id=ASSISTANT_ID
-            ).get_result()
-        session['session_id'] = response['session_id']
-
-    if 'input' in msg:
-        inp = {
-            'message_type': 'text',
-            'text': msg
-            }
-    else:
-        inp = {
-            'message_type': 'text',
-            'text': 'Hello'
-        }
-
-    reply = 'Have a reply'
-
-    ## Watson Assistant ##
-    try:
-        r = assistant.message(
-            assistant_id=ASSISTANT_ID,
-            session_id=session['session_id'],
-            input=inp
-        ).get_result()
-
-        reply = r['output']['generic'][0]['text']
-
-    except Exception as e:
-        traceback.print_exc(chain=False)
-        return repr(e)
-    ## Watson Assistant END ##
-
-    return reply
+    return
 
 ############
 ### MAIN ###
@@ -180,7 +136,7 @@ def add_header(response):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('dog_page.html')
 
 ## GET Request handler ##
 @app.route('/local-api/post', methods=['POST'])
@@ -261,3 +217,22 @@ if __name__ == '__main__':
 
     port = int(os.getenv('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
+
+
+db = MySQLdb.connect(host="localhost",    # your host, usually localhost
+                     user="john",         # your username
+                     passwd="megajonhy",  # your password
+                     db="jonhydb")        # name of the data base
+
+# you must create a Cursor object. It will let
+#  you execute all the queries you need
+cur = db.cursor()
+
+# Use all the SQL you like
+cur.execute("SELECT * FROM YOUR_TABLE_NAME")
+
+# print all the first cell of all the rows
+for row in cur.fetchall():
+    print row[0]
+
+db.close()
